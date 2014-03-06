@@ -43,12 +43,12 @@ function telegram_use_contactlist_page(){
 }
 
 function telegram_use_read_messages_page(){
-	$user = $_GET['user'];
-	$new = $_GET['new'];
-	$form_state['build_info']['args'][0][0] = $user;
-	$form_state['build_info']['args'][0][1] = $new;
-	$output = drupal_get_form('telegram_use_read_messages_form', $form_state['build_info']['args'][0]);
-
+  $user = $_GET['user'];
+  (isset($_GET['new'])) ?  $new = $_GET['new'] : NULL;
+  $form_state['build_info']['args'][0][0] = $user;
+  (isset($_GET['new'])) ? $form_state['build_info']['args'][0][1] = $new : NULL;
+  $output = drupal_get_form('telegram_use_read_messages_form', $form_state['build_info']['args'][0]);
+  //$output.= grupal_get_form('telegram_use_send_form');
 	return $output;
 }
 function telegram_use_contact_list_form($form, &$form_state) {
@@ -84,6 +84,7 @@ function telegram_use_contact_list_form_submit($form, &$form_state) {
 function telegram_use_read_messages_form($form, &$form_state) {
   $user = &$form_state['values']['user'];
   $new = &$form_state['values']['new'];
+  (isset($form_state['build_info']['args'][0][1])) ? $newmessages = $form_state['build_info']['args'][0][1] : $newmessages = NULL;
   if (isset($form_state['output'])) {
     $form['output'] = array(
       '#type' => 'fieldset',
@@ -96,7 +97,7 @@ function telegram_use_read_messages_form($form, &$form_state) {
   $form['contacts'] = array(
     '#title' => t('Messages'),
     '#type' => 'item',
-    '#markup' => telegram_use_read_messages($form_state['build_info']['args'][0][0],$form_state['build_info']['args'][0][1]),
+    '#markup' => telegram_use_read_messages($form_state['build_info']['args'][0][0], $newmessages),
   );
   
   //$form['readmessages'] = array('#type' => 'submit', '#value' => t('Read'));
@@ -189,14 +190,14 @@ function telegram_use_contact_list() {
       check_plain($contact->phone),
       check_plain($contact->status),
       l('Show', 'telegram/readmessages', array('query' => array('user' => check_plain($contact->peer)))),
-      l(check_plain($unreadm), 'telegram/readmessages', array('query' => array('user' => check_plain($contact->peer), 'new' => $unreadm))),
+      ($unreadm != 0) ? l(check_plain($unreadm), 'telegram/readmessages', array('query' => array('user' => check_plain($contact->peer), 'new' => $unreadm))): NULL,
     );
   }
   return theme('table', array('header' => $header, 'rows' => $rows));
 }
 
 function telegram_use_read_messages($user, $new = NULL) {
-  (isset($new)) ? $markread = telegram_client()->markAsRead($user) : NULL;
+  (isset($new)) ? $markread = telegram_client()->markAsRead($user) :  NULL;
   $read_messages = telegram_client()->getHistory($user, $new);
   $header = array(t('Date'), t('Peer'), t('direction'), t('Message'));
   $rows = array();
